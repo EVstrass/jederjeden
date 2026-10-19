@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1E2761">
+<title>Jeder gegen Jeden</title>
+<style>
+:root{
+  --navy:#1E2761; --red:#C8102E; --line:#e2e5ee; --soft:#f3f5fa; --muted:#6b7290;
+  --gold:#d9a521; --silver:#9aa3b5; --bronze:#b8763c; --ok:#1f8a4c;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#fff;color:var(--navy);font-family:Calibri,'Segoe UI',Arial,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
+input{font-family:inherit;user-select:text;-webkit-user-select:text}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;background:#fff}
+.screen.active{display:flex}
+
+/* Kopfzeile */
+.top{display:flex;align-items:center;justify-content:space-between;padding:1.6vh 6vw 1.6vh 2.5vw;border-bottom:.6vh solid var(--red);background:#fff;flex:0 0 auto}
+.club{font-family:Cambria,Georgia,serif;font-weight:700;font-size:5.2vh;color:var(--navy);letter-spacing:.05em}
+.mode{font-size:3.4vh;color:var(--muted);font-weight:600}
+.round-badge{font-size:3.6vh;font-weight:700;background:var(--navy);color:#fff;padding:.8vh 2vw;border-radius:1.2vh}
+.fs-btn{position:fixed;top:1.2vh;right:1vw;width:5vh;height:5vh;border-radius:1vh;background:var(--soft);color:var(--navy);font-size:3vh;z-index:50;opacity:.7}
+
+/* Setup */
+.setup-wrap{flex:1;display:flex;flex-direction:column;align-items:center;padding:2.5vh 4vw 2vh;gap:2.2vh;overflow:auto}
+.setup-title{font-family:Cambria,Georgia,serif;font-size:7vh;font-weight:700}
+.setup-label{font-size:3.2vh;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.count-row{display:flex;gap:1.4vw}
+.count-btn{width:10vh;height:10vh;border-radius:1.8vh;font-size:5.5vh;font-weight:700;background:var(--soft);border:.4vh solid var(--line)}
+.count-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:1.4vh 2vw;width:min(90vw,150vh)}
+.name-field{display:flex;align-items:center;gap:1vw;background:var(--soft);border-radius:1.4vh;padding:0 1.4vw;height:7.5vh;border:.3vh solid var(--line)}
+.name-field span{font-size:3.4vh;font-weight:700;color:var(--red);min-width:3.5vh}
+.name-field input{flex:1;border:none;background:transparent;font-size:3.6vh;color:var(--navy);outline:none;height:100%}
+.name-field:focus-within{border-color:var(--navy);background:#fff}
+.scheme{font-size:2.6vh;color:var(--muted);text-align:center;max-width:90vw}
+.scheme b{color:var(--navy)}
+.scheme .out{color:var(--red);font-weight:700}
+.start-btn{background:var(--red);color:#fff;font-size:4.6vh;font-weight:700;padding:2vh 7vw;border-radius:2vh;box-shadow:0 .6vh 0 #8f0b20}
+.start-btn:active{transform:translateY(.4vh);box-shadow:0 .2vh 0 #8f0b20}
+
+/* Tabelle */
+.table{flex:1;display:flex;flex-direction:column;padding:1.2vh 2.5vw 0;min-height:0}
+.thead,.trow{display:grid;grid-template-columns:9vw 1fr auto 13vw;align-items:center;column-gap:1.5vw}
+.thead{font-size:2.4vh;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:0 1.2vw 1vh}
+.thead .tot,.trow .tot{text-align:right}
+.rows{flex:1;display:flex;flex-direction:column;gap:.9vh;min-height:0}
+.trow{flex:1 1 0;max-height:15vh;background:var(--soft);border-radius:1.6vh;padding:0 1.2vw;border:.3vh solid transparent}
+.trow.lead{background:#fff7e0;border-color:var(--gold)}
+.rank{display:flex;align-items:center;justify-content:center;width:1.7em;height:1.7em;border-radius:50%;background:#fff;border:.25vh solid var(--line);font-weight:700;font-size:.85em}
+.rank.r1{background:var(--gold);border-color:var(--gold);color:#fff}
+.rank.r2{background:var(--silver);border-color:var(--silver);color:#fff}
+.rank.r3{background:var(--bronze);border-color:var(--bronze);color:#fff}
+.pname{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chips{display:flex;gap:.5vw;align-items:center}
+.chip{width:3.4vw;height:.95em;min-height:3.6vh;border-radius:.8vh;background:#fff;border:.25vh solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.55em;font-weight:700;color:var(--navy)}
+.chip.out{background:var(--red);border-color:var(--red);color:#fff}
+.chip.win{background:var(--navy);border-color:var(--navy);color:#fff}
+.chip.hd{background:transparent;border:none;color:var(--muted);font-size:2.2vh;min-height:0;height:auto}
+.chip.more{width:2vw;border:none;background:transparent;color:var(--muted)}
+.trow .tot{font-size:1.35em;font-weight:800;color:var(--navy)}
+.trow.lead .tot{color:var(--red)}
+.empty-hint{font-size:2.6vh;color:var(--muted);text-align:center;padding:1vh 0 0}
+
+/* Fußleiste */
+.bottom{display:flex;align-items:center;justify-content:space-between;padding:1.6vh 2.5vw 2vh;gap:1.2vw;flex:0 0 auto}
+.bgroup{display:flex;gap:1.2vw}
+.btn{font-size:2.9vh;font-weight:700;padding:1.8vh 2.2vw;border-radius:1.6vh;background:var(--soft);border:.3vh solid var(--line);color:var(--navy)}
+.btn:disabled{opacity:.35}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff;font-size:3.8vh;padding:2.2vh 4vw;box-shadow:0 .6vh 0 #8f0b20}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;background:rgba(20,26,60,.55);display:none;align-items:center;justify-content:center;z-index:100}
+.overlay.active{display:flex}
+.panel{background:#fff;border-radius:2.4vh;box-shadow:0 2vh 6vh rgba(0,0,0,.3);display:flex;flex-direction:column}
+.entry{width:94vw;height:92vh;padding:2.4vh 2.4vw}
+.entry-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1vh}
+.entry-title{font-family:Cambria,Georgia,serif;font-size:4.6vh;font-weight:700}
+.entry-help{font-size:2.5vh;color:var(--muted)}
+.entry-rows{flex:1;display:flex;flex-direction:column;gap:1vh;min-height:0;padding:1vh 0}
+.erow{flex:1 1 0;max-height:13vh;display:grid;grid-template-columns:19vw 1fr 8vw;align-items:center;gap:1.2vw}
+.erow .en{font-size:3.4vh;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.places{display:grid;gap:.6vw;height:100%}
+.pbtn{border-radius:1.4vh;background:var(--soft);border:.3vh solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+.pbtn .pl{font-size:3.6vh;font-weight:800}
+.pbtn .pp{font-size:2vh;color:var(--muted);font-weight:700}
+.pbtn.taken{opacity:.35}
+.pbtn.sel{background:var(--navy);border-color:var(--navy);color:#fff;opacity:1}
+.pbtn.sel .pp{color:#cfd5ef}
+.pbtn.outb{border-color:#f0b8c2;color:var(--red)}
+.pbtn.outb.sel{background:var(--red);border-color:var(--red);color:#fff}
+.pbtn.outb.sel .pp{color:#ffd6dd}
+.erow .epts{font-size:3.8vh;font-weight:800;text-align:right;color:var(--navy)}
+.erow .epts.none{color:var(--line)}
+.entry-foot{display:flex;justify-content:space-between;align-items:center;gap:1.5vw;padding-top:1.4vh;border-top:.3vh solid var(--line)}
+.msg{font-size:2.7vh;font-weight:700;color:var(--red);flex:1;text-align:center}
+.msg.ok{color:var(--ok)}
+
+.confirm{padding:4vh 4vw;max-width:60vw;gap:3.5vh;align-items:center;text-align:center}
+.confirm p{font-size:3.6vh;font-weight:700}
+.confirm .bgroup{justify-content:center}
+
+/* Siegerehrung */
+.podium-panel{padding:4vh 4vw;width:80vw;align-items:center;gap:3vh}
+.podium-title{font-family:Cambria,Georgia,serif;font-size:6vh;font-weight:700;color:var(--red)}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:2vw;height:46vh;width:100%}
+.pod{flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.pod .who{font-size:4vh;font-weight:800;text-align:center;margin-bottom:1vh;max-width:20vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pod .sc{font-size:3vh;color:var(--muted);font-weight:700;margin-bottom:1.2vh}
+.pod .block{width:100%;border-radius:1.6vh 1.6vh 0 0;display:flex;align-items:flex-start;justify-content:center;color:#fff;font-size:8vh;font-weight:800;padding-top:1.5vh}
+.pod.p1 .block{height:60%;background:var(--gold)}
+.pod.p2 .block{height:42%;background:var(--silver)}
+.pod.p3 .block{height:28%;background:var(--bronze)}
+.podium-note{font-size:2.6vh;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<button class="fs-btn" id="fsBtn" title="Vollbild">⛶</button>
+
+<!-- Startmaske -->
+<section class="screen" id="setup">
+  <div class="top"><div class="club">EV Straßwalchen</div><div class="mode">Wertung</div></div>
+  <div class="setup-wrap">
+    <div class="setup-title">Jeder gegen Jeden</div>
+    <div class="setup-label">Anzahl Spieler</div>
+    <div class="count-row" id="countRow"></div>
+    <div class="setup-label">Namen der Spieler</div>
+    <div class="names" id="names"></div>
+    <div class="scheme" id="scheme"></div>
+    <button class="start-btn" id="startBtn">Spiel starten</button>
+  </div>
+</section>
+
+<!-- Spielanzeige -->
+<section class="screen" id="game">
+  <div class="top">
+    <div class="club">EV Straßwalchen</div>
+    <div class="mode">Jeder gegen Jeden</div>
+    <div class="round-badge" id="roundBadge">Runde 1</div>
+  </div>
+  <div class="table">
+    <div class="thead"><div>Rang</div><div>Spieler</div><div class="chips" id="chipHead"></div><div class="tot">Punkte</div></div>
+    <div class="rows" id="rows"></div>
+  </div>
+  <div class="bottom">
+    <div class="bgroup">
+      <button class="btn" id="newBtn">Neues Spiel</button>
+      <button class="btn" id="undoBtn">Letzte Runde löschen</button>
+    </div>
+    <div class="bgroup">
+      <button class="btn navy" id="podBtn">Siegerehrung</button>
+      <button class="btn primary" id="entryBtn">+ Runde eintragen</button>
+    </div>
+  </div>
+</section>
+
+<!-- Eingabe Runde -->
+<div class="overlay" id="entryOv">
+  <div class="panel entry">
+    <div class="entry-head">
+      <div class="entry-title" id="entryTitle">Runde 1 eintragen</div>
+      <div class="entry-help">Platz am Stockflecken antippen &nbsp;·&nbsp; <b style="color:var(--red)">Raus</b> = durchs Feld geschossen (0 Punkte)</div>
+    </div>
+    <div class="entry-rows" id="entryRows"></div>
+    <div class="entry-foot">
+      <button class="btn" id="entryCancel">Abbrechen</button>
+      <button class="btn" id="entryClear">Leeren</button>
+      <div class="msg" id="entryMsg"></div>
+      <button class="btn primary" id="entrySave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bestätigung -->
+<div class="overlay" id="confirmOv">
+  <div class="panel confirm">
+    <p id="confirmText"></p>
+    <div class="bgroup">
+      <button class="btn" id="confirmNo">Abbrechen</button>
+      <button class="btn primary" id="confirmYes">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Siegerehrung -->
+<div class="overlay" id="podOv">
+  <div class="panel podium-panel">
+    <div class="podium-title">Siegerehrung</div>
+    <div class="podium" id="podium"></div>
+    <div class="podium-note" id="podNote"></div>
+    <div class="bgroup">
+      <button class="btn" id="podContinue">Weiterspielen</button>
+      <button class="btn primary" id="podNew">Neues Spiel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY = 'evs_jederGegenJeden_v1';
+  var MAXCHIPS = 10;
+  var S = { phase:'setup', n:8, names:['','','','','','','',''], players:[], rounds:[] };
+  var draft = null, editIdx = null, confirmCb = null;
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+  function load(){
+    try{
+      var d = JSON.parse(localStorage.getItem(KEY));
+      if(d && d.names && d.rounds){ S = d; while(S.names.length<8) S.names.push(''); }
+    }catch(e){}
+  }
+  function pts(place, n){ return place > 0 ? n - place : 0; }
+
+  /* ---------- Startmaske ---------- */
+  function renderSetup(){
+    var cr = $('countRow'); cr.innerHTML = '';
+    for(var k=4;k<=8;k++){
+      var b = document.createElement('button');
+      b.className = 'count-btn' + (S.n===k?' active':'');
+      b.textContent = k;
+      b.onclick = (function(k){ return function(){ S.n=k; save(); renderSetup(); }; })(k);
+      cr.appendChild(b);
+    }
+    var nm = $('names'); nm.innerHTML = '';
+    for(var i=0;i<S.n;i++){
+      var f = document.createElement('label');
+      f.className = 'name-field';
+      f.innerHTML = '<span>'+(i+1)+'</span><input type="text" maxlength="18" autocomplete="off" placeholder="Spieler '+(i+1)+'">';
+      var inp = f.querySelector('input');
+      inp.value = S.names[i] || '';
+      inp.oninput = (function(i){ return function(e){ S.names[i]=e.target.value; save(); }; })(i);
+      inp.onkeydown = function(e){ if(e.key==='Enter'){ e.target.blur(); } };
+      nm.appendChild(f);
+    }
+    var parts = [];
+    for(var p=1;p<=S.n;p++){ parts.push(p+'. Platz <b>'+(S.n-p)+'</b>'); }
+    $('scheme').innerHTML = 'Punkte pro Runde: ' + parts.join(' &nbsp;·&nbsp; ') + ' &nbsp;·&nbsp; <span class="out">Durchgeschossen 0</span>';
+  }
+
+  function startGame(){
+    S.players = [];
+    for(var i=0;i<S.n;i++){
+      var t = (S.names[i]||'').trim();
+      S.players.push(t || ('Spieler '+(i+1)));
+    }
+    S.rounds = [];
+    S.phase = 'game';
+    save(); show();
+  }
+
+  /* ---------- Wertung ---------- */
+  function standings(){
+    var n = S.players.length;
+    var rows = S.players.map(function(name,i){
+      var pc = []; for(var p=0;p<=n;p++) pc.push(0);
+      var total = 0;
+      S.rounds.forEach(function(r){ total += pts(r[i],n); if(r[i]>0) pc[r[i]]++; });
+      return { i:i, name:name, total:total, pc:pc };
+    });
+    function cmp(a,b){
+      if(b.total!==a.total) return b.total-a.total;
+      for(var p=1;p<=n;p++){ if(b.pc[p]!==a.pc[p]) return b.pc[p]-a.pc[p]; }
+      return 0;
+    }
+    rows.sort(function(a,b){ return cmp(a,b) || a.i-b.i; });
+    rows.forEach(function(r,k){ r.rank = (k>0 && cmp(rows[k-1],r)===0) ? rows[k-1].rank : k+1; });
+    return rows;
+  }
+
+  function renderGame(){
+    var n = S.players.length, R = S.rounds.length;
+    $('roundBadge').textContent = R===0 ? 'Runde 1' : (R + (R===1?' Runde':' Runden') + ' gespielt');
+    var start = Math.max(0, R-MAXCHIPS);
+
+    var head = '';
+    if(start>0) head += '<div class="chip hd more">…</div>';
+    for(var j=start;j<R;j++) head += '<div class="chip hd">R'+(j+1)+'</div>';
+    $('chipHead').innerHTML = head;
+
+    var table = document.querySelector('.table');
+    table.style.fontSize = n<=4 ? '6.4vh' : n<=5 ? '5.8vh' : n<=6 ? '5.2vh' : n<=7 ? '4.7vh' : '4.3vh';
+
+    var st = standings();
+    var html = '';
+    st.forEach(function(r){
+      var chips = '';
+      if(start>0) chips += '<div class="chip more">…</div>';
+      for(var j=start;j<R;j++){
+        var pl = S.rounds[j][r.i];
+        var cls = pl===0 ? ' out' : (pl===1 ? ' win' : '');
+        chips += '<button class="chip'+cls+'" data-round="'+j+'" title="Runde '+(j+1)+' bearbeiten">'+(pl===0?'0':pts(pl,n))+'</button>';
+      }
+      var lead = (R>0 && r.rank===1) ? ' lead' : '';
+      var rc = R>0 && r.rank<=3 ? ' r'+r.rank : '';
+      html += '<div class="trow'+lead+'">'
+        + '<div><div class="rank'+rc+'">'+r.rank+'</div></div>'
+        + '<div class="pname">'+esc(r.name)+'</div>'
+        + '<div class="chips">'+chips+'</div>'
+        + '<div class="tot">'+r.total+'</div>'
+        + '</div>';
+    });
+    if(R===0) html += '<div class="empty-hint">Noch keine Runde eingetragen. Tippe auf „+ Runde eintragen“.</div>';
+    $('rows').innerHTML = html;
+    Array.prototype.forEach.call(document.querySelectorAll('#rows .chip[data-round]'), function(c){
+      c.onclick = function(){ openEntry(parseInt(c.getAttribute('data-round'),10)); };
+    });
+    $('undoBtn').disabled = R===0;
+    $('podBtn').disabled = R===0;
+  }
+
+  /* ---------- Rundeneingabe ---------- */
+  function openEntry(idx){
+    var n = S.players.length;
+    editIdx = (idx===undefined || idx===null) ? null : idx;
+    draft = editIdx===null ? S.players.map(function(){ return null; }) : S.rounds[editIdx].slice();
+    $('entryTitle').textContent = 'Runde ' + ((editIdx===null ? S.rounds.length : editIdx) + 1) + (editIdx===null ? ' eintragen' : ' bearbeiten');
+    renderEntry();
+    $('entryOv').classList.add('active');
+  }
+
+  function pick(i,p){
+    if(draft[i]===p){ draft[i]=null; }
+    else{
+      if(p>0){ var j = draft.indexOf(p); if(j>=0 && j!==i) draft[j]=null; }
+      draft[i]=p;
+    }
+    renderEntry();
+  }
+
+  function validate(){
+    var open = draft.filter(function(v){ return v===null; }).length;
+    if(open>0) return { ok:false, text: open===1 ? 'Noch 1 Spieler ohne Platz' : 'Noch '+open+' Spieler ohne Platz' };
+    var used = draft.filter(function(v){ return v>0; }).sort(function(a,b){return a-b;});
+    for(var k=0;k<used.length;k++){
+      if(used[k]!==k+1) return { ok:false, text:'Platz '+(k+1)+' fehlt. Bitte lückenlos ab Platz 1 vergeben.' };
+    }
+    return { ok:true, text:'Alles vergeben, bereit zum Speichern' };
+  }
+
+  function renderEntry(){
+    var n = S.players.length;
+    var box = $('entryRows'); box.innerHTML = '';
+    S.players.forEach(function(name,i){
+      var row = document.createElement('div'); row.className = 'erow';
+      var places = document.createElement('div'); places.className = 'places';
+      places.style.gridTemplateColumns = 'repeat('+(n+1)+',1fr)';
+      for(var p=1;p<=n;p++){
+        var b = document.createElement('button');
+        var sel = draft[i]===p, taken = !sel && draft.indexOf(p)>=0;
+        b.className = 'pbtn' + (sel?' sel':'') + (taken?' taken':'');
+        b.innerHTML = '<span class="pl">'+p+'.</span><span class="pp">'+(n-p)+' P</span>';
+        b.onclick = (function(i,p){ return function(){ pick(i,p); }; })(i,p);
+        places.appendChild(b);
+      }
+      var o = document.createElement('button');
+      o.className = 'pbtn outb' + (draft[i]===0?' sel':'');
+      o.innerHTML = '<span class="pl">Raus</span><span class="pp">0 P</span>';
+      o.onclick = (function(i){ return function(){ pick(i,0); }; })(i);
+      places.appendChild(o);
+
+      var nm = document.createElement('div'); nm.className='en'; nm.textContent = name;
+      var ep = document.createElement('div');
+      ep.className = 'epts' + (draft[i]===null?' none':'');
+      ep.textContent = draft[i]===null ? 'P' : pts(draft[i],n)+' P';
+      row.appendChild(nm); row.appendChild(places); row.appendChild(ep);
+      box.appendChild(row);
+    });
+    var v = validate();
+    $('entryMsg').textContent = v.text;
+    $('entryMsg').className = 'msg' + (v.ok?' ok':'');
+    $('entrySave').disabled = !v.ok;
+  }
+
+  function saveEntry(){
+    if(!validate().ok) return;
+    if(editIdx===null) S.rounds.push(draft.slice());
+    else S.rounds[editIdx] = draft.slice();
+    save();
+    $('entryOv').classList.remove('active');
+    renderGame();
+  }
+
+  /* ---------- Bestätigung ---------- */
+  function ask(text, okLabel, cb){
+    $('confirmText').textContent = text;
+    $('confirmYes').textContent = okLabel;
+    confirmCb = cb;
+    $('confirmOv').classList.add('active');
+  }
+
+  /* ---------- Siegerehrung ---------- */
+  function showPodium(){
+    var st = standings();
+    var order = [st[1], st[0], st[2]];
+    var cls = ['p2','p1','p3'];
+    var html = '';
+    order.forEach(function(r,k){
+      if(!r){ html += '<div class="pod"></div>'; return; }
+      var c = r.rank===1 ? 'p1' : r.rank===2 ? 'p2' : r.rank===3 ? 'p3' : cls[k];
+      html += '<div class="pod '+c+'"><div class="who">'+esc(r.name)+'</div><div class="sc">'+r.total+' Punkte</div><div class="block">'+r.rank+'</div></div>';
+    });
+    $('podium').innerHTML = html;
+    var R = S.rounds.length;
+    $('podNote').textContent = 'Stand nach ' + R + (R===1?' Runde':' Runden') + '. Bei Punktegleichstand entscheidet die Anzahl der Siege, dann der 2. Plätze usw.';
+    $('podOv').classList.add('active');
+  }
+
+  /* ---------- Steuerung ---------- */
+  function show(){
+    $('setup').classList.toggle('active', S.phase==='setup');
+    $('game').classList.toggle('active', S.phase==='game');
+    if(S.phase==='setup') renderSetup(); else renderGame();
+  }
+
+  function newGame(){
+    ask('Neues Spiel starten? Alle Punkte werden gelöscht. Die Namen bleiben erhalten.', 'Neues Spiel', function(){
+      for(var i=0;i<S.players.length;i++){
+        S.names[i] = /^Spieler \d+$/.test(S.players[i]) ? '' : S.players[i];
+      }
+      S.n = S.players.length || S.n;
+      S.rounds = []; S.phase = 'setup';
+      save(); show();
+    });
+  }
+
+  $('startBtn').onclick = startGame;
+  $('entryBtn').onclick = function(){ openEntry(null); };
+  $('entryCancel').onclick = function(){ $('entryOv').classList.remove('active'); };
+  $('entryClear').onclick = function(){ draft = S.players.map(function(){ return null; }); renderEntry(); };
+  $('entrySave').onclick = saveEntry;
+  $('undoBtn').onclick = function(){
+    if(!S.rounds.length) return;
+    ask('Runde ' + S.rounds.length + ' wirklich löschen?', 'Löschen', function(){ S.rounds.pop(); save(); renderGame(); });
+  };
+  $('newBtn').onclick = newGame;
+  $('podBtn').onclick = showPodium;
+  $('podContinue').onclick = function(){ $('podOv').classList.remove('active'); };
+  $('podNew').onclick = function(){ $('podOv').classList.remove('active'); newGame(); };
+  $('confirmNo').onclick = function(){ $('confirmOv').classList.remove('active'); confirmCb = null; };
+  $('confirmYes').onclick = function(){ $('confirmOv').classList.remove('active'); var cb = confirmCb; confirmCb = null; if(cb) cb(); };
+  $('fsBtn').onclick = function(){
+    var d = document, el = d.documentElement;
+    if(!d.fullscreenElement && !d.webkitFullscreenElement){
+      (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
+    } else {
+      (d.exitFullscreen || d.webkitExitFullscreen || function(){}).call(d);
+    }
+  };
+
+  load(); show();
+})();
+</script>
+</body>
+</html>
